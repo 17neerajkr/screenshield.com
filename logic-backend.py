@@ -6,7 +6,7 @@ import speech_recognition as sr
 from plyer import notification
 import screen_brightness_control as sbc
 import threading
-import platform
+import platformgit
 
 try:
     import winsound
