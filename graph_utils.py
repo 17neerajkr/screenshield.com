@@ -27,3 +27,7 @@ def show_graph():
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+
+def show_graph_screen():
+    return None

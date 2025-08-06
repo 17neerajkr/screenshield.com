@@ -7,16 +7,14 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.progressbar import ProgressBar
 from kivy.clock import Clock
-from threading import Thread
 from kivy.uix.widget import Widget
+
+from threading import Thread
 import time
-import cv2
-import mediapipe as mp
-import screen_brightness_control as sbc
 from plyer import notification
 import pyttsx3
 import winsound
-
+import screen_brightness_control as sbc
 
 # Initialize TTS
 engine = pyttsx3.init()
@@ -24,7 +22,6 @@ engine = pyttsx3.init()
 def voice_alert(text):
     engine.say(text)
     engine.runAndWait()
-
 
 class ScreenShieldUI(BoxLayout):
     def __init__(self, **kwargs):
@@ -47,7 +44,6 @@ class ScreenShieldUI(BoxLayout):
 
         self.status_label = Label(text="Status: OFF", font_size="18sp", color=(1, 0, 0, 1), size_hint=(1, None), height=30)
         header_box.add_widget(self.status_label)
-
         self.add_widget(header_box)
 
         # Features
@@ -75,6 +71,7 @@ class ScreenShieldUI(BoxLayout):
         self.distance_input.bind(text=self.on_distance_input_change)
         slider_box.add_widget(self.distance_input)
         self.add_widget(slider_box)
+
         self.distance_label = Label(text="Current: 30 cm", font_size="18sp")
         self.add_widget(self.distance_label)
 
@@ -117,12 +114,12 @@ class ScreenShieldUI(BoxLayout):
         self.distance_threshold = int(self.distance_slider.value)
         self.total_minutes = 0
         self.progress_counter = 0
-        self.mp_face_mesh = mp.solutions.face_mesh
 
-        # Clock-based updates
+        # Clock updates
         Clock.schedule_interval(self.update_timer, 60)
         Clock.schedule_interval(self.update_exercise_bar, 1)
 
+    # --- Handlers ---
     def on_distance_slider_change(self, instance, value):
         self.distance_label.text = f"Current: {int(value)} cm"
         self.distance_input.text = str(int(value))
@@ -143,7 +140,7 @@ class ScreenShieldUI(BoxLayout):
             sw.disabled = not value
 
     def on_feature_toggle(self, switch, value):
-        pass  # Placeholder for future handling
+        pass  # placeholder for later
 
     def toggle_monitoring(self, instance):
         if not self.master_switch.active:
@@ -163,59 +160,14 @@ class ScreenShieldUI(BoxLayout):
         self.timer_label.text = "Session Time: 0 min"
         self.exercise_bar.value = 0
         self.start_btn.text = "⏸ Stop"
-        self.thread = Thread(target=self.monitor_user)
+
+        # placeholder thread — actual detection logic will be added from your logic code
+        self.thread = Thread(target=self.mock_monitor_user)
         self.thread.start()
 
-    def monitor_user(self):
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
-            notification.notify(title="Webcam Error", message="Webcam not accessible.", timeout=4)
-            voice_alert("Webcam could not be accessed. Please check your camera.")
-            return
-
-        with self.mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5) as face_mesh:
-            while self.running:
-                ret, frame = cap.read()
-                if not ret:
-                    continue
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = face_mesh.process(rgb)
-                if results.multi_face_landmarks:
-                    nose = results.multi_face_landmarks[0].landmark[1]
-                    distance_cm = round((1 - nose.z) * 50, 1)
-                    Clock.schedule_once(lambda dt: self.update_distance_display(distance_cm))
-                    if self.alert_count < self.max_alerts:
-                        if distance_cm < 25:
-                            self.trigger_alert(distance_cm, "red")
-                        elif distance_cm < 30:
-                            self.trigger_alert(distance_cm, "yellow")
-                time.sleep(0.5)
-
-        cap.release()
-
-    def update_distance_display(self, dist):
-        self.live_distance_label.text = f"Live Distance: {dist:.1f} cm"
-        if dist < 25:
-            self.live_distance_label.color = (1, 0, 0, 1)
-        elif dist < 30:
-            self.live_distance_label.color = (1, 1, 0, 1)
-        else:
-            self.live_distance_label.color = (0, 1, 0, 1)
-
-    def trigger_alert(self, dist, level):
-        self.alert_count += 1
-        if self.feature_switches["Notifications"].active:
-            msg = "Too Close!" if level == "red" else "Caution Zone"
-            notification.notify(title=msg, message=f"You are {dist} cm from the screen.", timeout=3)
-        if self.feature_switches["Voice Alerts"].active:
-            voice_alert(f"You are {dist} centimeters from the screen.")
-        if self.feature_switches["Beep Sound"].active:
-            winsound.Beep(1000 if level == "red" else 800, 500)
-        if self.feature_switches["Brightness Control"].active:
-            try:
-                sbc.set_brightness(30 if level == "red" else 50)
-            except:
-                pass
+    def mock_monitor_user(self):
+        while self.running:
+            time.sleep(1)  # simulating detection loop
 
     def reset_defaults(self, instance):
         self.master_switch.active = False
@@ -250,11 +202,9 @@ class ScreenShieldUI(BoxLayout):
                     if self.feature_switches["Voice Alerts"].active:
                         voice_alert("Please take a 20-second eye break.")
 
-
 class ScreenShieldApp(App):
     def build(self):
         return ScreenShieldUI()
 
-
-if __name__== '__main__':
+if __name__ == '__main__':
     ScreenShieldApp().run()

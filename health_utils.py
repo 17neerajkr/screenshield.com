@@ -21,3 +21,5 @@ def get_health_tip(distance, blink_count):
         return "Good job! Keep maintaining your posture and blink rate."
 
 
+def setup_health_monitor():
+    return None
