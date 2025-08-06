@@ -19,3 +19,5 @@ def get_health_tip(distance, blink_count):
         return "Blink more to reduce eye strain."
     else:
         return "Good job! Keep maintaining your posture and blink rate."
+
+
